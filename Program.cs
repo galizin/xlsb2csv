@@ -152,7 +152,10 @@ namespace xlsbtocsv
               if (div100)
                 x = x / 100;
               //outputFile.WriteLine("rk number {0} {1}{2}{3}{4} {5}", x, Convert.ToString(data[8], 16), Convert.ToString(data[9], 16), Convert.ToString(data[10], 16), Convert.ToString(data[11], 16), Convert.ToString(BitConverter.ToUInt32(data, 8), 2));
-              outputFile.WriteLine("rk number {0}", x);
+              if (dateformatted(data, datestyles))
+                outputFile.WriteLine("rk date {0}", stringdate(x));
+              else
+                outputFile.WriteLine("rk {0}", x);
               //bit 0 - divide by 100 if 1
               //bit 1 - 30 sign. bits of float if 0 signed integer if 1
               break;
@@ -166,7 +169,10 @@ namespace xlsbtocsv
               break;
             case 5: // BrtCellReal
               writecellinfo(outputFile, data, datestyles);
-              outputFile.WriteLine("dbl {0}", BitConverter.ToDouble(data, 8));
+              if (dateformatted(data, datestyles))
+                outputFile.WriteLine("dbl date {0}", stringdate(BitConverter.ToDouble(data, 8)));
+              else
+                outputFile.WriteLine("dbl {0}", BitConverter.ToDouble(data, 8));
               break;
             case 6: // BrtCellSt
               writecellinfo(outputFile, data, datestyles);
@@ -206,12 +212,18 @@ namespace xlsbtocsv
         }
       }
     }
+    static public bool dateformatted(byte[] data, List<uint> datastyles)
+    {
+      uint styleid;
+      getcellno(data, out styleid);
+      return datastyles.Contains(styleid);
+    }
     static public void writecellinfo(StreamWriter f, byte[] data, List<uint> datastyles)
     {
       uint styleid;
       f.Write("col {0} style {1} ", getcellno(data, out styleid), styleid);
-      if (datastyles.Contains(styleid))
-        f.Write("date ");
+      //if (datastyles.Contains(styleid))
+      //f.Write("date ");
     }
     static public uint getcellno(byte[] buffer, out uint styleid)
     {
