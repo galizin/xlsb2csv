@@ -18,14 +18,12 @@ namespace xlsbtocsv
       string pathStyle = @"C:\user_main\python\xlsb\xl\styles.bin";
       Dictionary<uint, string> shstr = new Dictionary<uint, string>();
       List<uint> datestyle = new List<uint>();
-      List<uint> timestyle = new List<uint>();
       try
       {
         using (FileStream fsSource = new FileStream(pathStyle, FileMode.Open, FileAccess.Read))
         {
           loadsharedstrings(fsSource, ref shstr);
         }
-
         //using (FileStream fsSource = new FileStream(pathShStr, FileMode.Open, FileAccess.Read))
         //{
         //  loadsharedstrings(fsSource, ref shstr);
@@ -41,7 +39,7 @@ namespace xlsbtocsv
         Console.WriteLine(ioEx.Message);
       }
     }
-    static public void loadstyles(FileStream fsSource, ref List<uint> DateStyles, ref List<uint> TimeStyles)
+    static public void loadstyles(FileStream fsSource, ref List<uint> DateStyles)
     {
       while (1 == 1)
       {
@@ -52,12 +50,12 @@ namespace xlsbtocsv
           break;
         switch (rec_id)
         {
-          case 44: // Shared string
+          case 44: // custom
+            //[Black] [Green] [White] [Blue] [Magenta] [Yellow] [Cyan] [Red]
             break;
-          case 47: // Shared string
+          case 47: // built-in
             break;
         }
-        //[Black] [Green] [White] [Blue] [Magenta] [Yellow] [Cyan] [Red]
       }
     }
     static public void loadsharedstrings(FileStream fsSource, ref Dictionary<uint, string> shstr)
