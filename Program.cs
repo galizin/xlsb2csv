@@ -151,7 +151,8 @@ namespace xlsbtocsv
               }
               if (div100)
                 x = x / 100;
-              outputFile.WriteLine("rk number {0} {1}{2}{3}{4} {5}", x, Convert.ToString(data[8], 16), Convert.ToString(data[9], 16), Convert.ToString(data[10], 16), Convert.ToString(data[11], 16), Convert.ToString(BitConverter.ToUInt32(data, 8), 2));
+              //outputFile.WriteLine("rk number {0} {1}{2}{3}{4} {5}", x, Convert.ToString(data[8], 16), Convert.ToString(data[9], 16), Convert.ToString(data[10], 16), Convert.ToString(data[11], 16), Convert.ToString(BitConverter.ToUInt32(data, 8), 2));
+              outputFile.WriteLine("rk number {0}", x);
               //bit 0 - divide by 100 if 1
               //bit 1 - 30 sign. bits of float if 0 signed integer if 1
               break;
@@ -265,6 +266,23 @@ namespace xlsbtocsv
         multiplier = multiplier * 128;
       }
       throw new IndexOutOfRangeException("unable to calculate record length");
+    }
+    static public string stringdate(double innumeric)
+    {
+      if (Math.Truncate(innumeric) == 0)
+      {
+        return new DateTime(1900, 1, 1, 0, 0, 0).AddSeconds(Math.Truncate(innumeric * 24 * 60 * 60)).ToString("o");
+      }
+      else
+      {
+        if (Math.Truncate(innumeric) >= 61)
+          innumeric -= 1;
+        // According to Lotus 1-2-3, Feb 29th 1900 is a real thing, therefore we have to remove one day after that date
+        return new DateTime(1899, 12, 31, 0, 0, 0).AddDays(Math.Truncate(innumeric)).AddSeconds(Math.Truncate((innumeric % 1) * 24 * 60 * 60)).ToString("o");
+        //  else
+        // Feb 29th 1900 will show up as Mar 1st 1900 because Python won't handle that date
+        //  return new DateTime(1899, 12, 31, 0, 0, 0) + timedelta(days=int(date), seconds=int((date % 1) * 24 * 60 * 60));
+      }
     }
   }
 }
