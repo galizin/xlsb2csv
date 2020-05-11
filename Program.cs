@@ -12,46 +12,28 @@ namespace xlsbtocsv
     {
       //2.2.1
       //2.1.8
-      // Specify a file to read from and to create.
-      string pathShStr = @"C:\user_main\python\FL_insurance_sample3 - Copy.xlsb\xl\sharedStrings.bin";
+      //string pathShStr = @"C:\user_main\python\FL_insurance_sample3 - Copy.xlsb\xl\sharedStrings.bin";
       //string pathWksht = @"C:\user_main\python\FL_insurance_sample3 - Copy.xlsb\xl\worksheets\sheet1.bin";
-      //string pathWksht = @"C:\user_main\python\xlsb\xl\worksheets\sheet1.bin";
-      string pathWksht = @"C:\user_main\python\xlsb\xl\styles.bin";
-      //string pathNew = @"c:\tests\newfile.txt";
+      string pathWksht = @"C:\user_main\python\xlsb\xl\worksheets\sheet1.bin";
+      string pathStyle = @"C:\user_main\python\xlsb\xl\styles.bin";
+      Dictionary<uint, string> shstr = new Dictionary<uint, string>();
+      List<uint> datestyle = new List<uint>();
+      List<uint> timestyle = new List<uint>();
       try
       {
-        Dictionary<uint, string> shstr;
-        using (FileStream fsSource = new FileStream(pathShStr, FileMode.Open, FileAccess.Read))
+        using (FileStream fsSource = new FileStream(pathStyle, FileMode.Open, FileAccess.Read))
         {
-          loadsharedstrings(fsSource, out shstr);
+          loadsharedstrings(fsSource, ref shstr);
         }
+
+        //using (FileStream fsSource = new FileStream(pathShStr, FileMode.Open, FileAccess.Read))
+        //{
+        //  loadsharedstrings(fsSource, ref shstr);
+        //}
+
         using (FileStream fsSource = new FileStream(pathWksht, FileMode.Open, FileAccess.Read))
         {
-          readrecords(fsSource, shstr);
-          //// Read the source file into a byte array.
-          //byte[] bytes = new byte[fsSource.Length];
-          //int numBytesToRead = (int)fsSource.Length;
-          //int numBytesRead = 0;
-          //while (numBytesToRead > 0)
-          //{
-          //  // Read may return anything from 0 to numBytesToRead.
-          //  int n = fsSource.Read(bytes, numBytesRead, numBytesToRead);
-
-          //  // Break when the end of the file is reached.
-          //  if (n == 0)
-          //    break;
-
-          //  numBytesRead += n;
-          //  numBytesToRead -= n;
-          //}
-          //numBytesToRead = bytes.Length;
-
-          // Write the byte array to the other FileStream.
-          //using (FileStream fsNew = new FileStream(pathNew,
-          //FileMode.Create, FileAccess.Write))
-          //{
-          //fsNew.Write(bytes, 0, numBytesToRead);
-          //}
+          readworksheet(fsSource, shstr);
         }
       }
       catch (FileNotFoundException ioEx)
@@ -59,42 +41,55 @@ namespace xlsbtocsv
         Console.WriteLine(ioEx.Message);
       }
     }
-    static public void loadsharedstrings(FileStream fsSource, out Dictionary<uint, string> shstr)
+    static public void loadstyles(FileStream fsSource, ref List<uint> DateStyles, ref List<uint> TimeStyles)
     {
-      shstr = new Dictionary<uint, string>();
+      while (1 == 1)
+      {
+        int rec_id;
+        byte[] data = null;
+        readrecord(out rec_id, ref data, fsSource);
+        if (rec_id == -1)
+          break;
+        switch (rec_id)
+        {
+          case 44: // Shared string
+            break;
+          case 47: // Shared string
+            break;
+        }
+        //[Black] [Green] [White] [Blue] [Magenta] [Yellow] [Cyan] [Red]
+      }
+    }
+    static public void loadsharedstrings(FileStream fsSource, ref Dictionary<uint, string> shstr)
+    {
       uint strid = 0;
       while (1 == 1)
       {
-        int rec_id = read_id(fsSource);
+        int rec_id;
+        byte[] data = null;
+        readrecord(out rec_id, ref data, fsSource);
         if (rec_id == -1)
           break;
-        int rec_len = read_len(fsSource);
-        //outputFile.WriteLine("{0} {1} {2}", rec_id, rec_len, fsSource.Position);
-        byte[] data = new byte[rec_len];
-        fsSource.Read(data, 0, rec_len);
         switch (rec_id)
         {
           case 19: // Shared string
-            shstr.Add(strid ,getxlwidestring(data, 1));
+            shstr.Add(strid, getxlwidestring(data, 1));
             strid++;
             break;
         }
       }
     }
-    static public void readrecords(FileStream fsSource, Dictionary<uint, string> shstr)
+    static public void readworksheet(FileStream fsSource, Dictionary<uint, string> shstr)
     {
       using (StreamWriter outputFile = new StreamWriter("output.txt", false, Encoding.UTF8))
       {
         while (1 == 1)
         {
-          int rec_id = read_id(fsSource);
+          int rec_id;
+          byte[] data = null;
+          readrecord(out rec_id, ref data, fsSource);
           if (rec_id == -1)
             break;
-          int rec_len = read_len(fsSource);
-          outputFile.WriteLine("{0} {1} {2}", rec_id, rec_len, fsSource.Position);
-          byte[] data = new byte[rec_len];
-          fsSource.Read(data, 0, rec_len);
-          continue;
           switch (rec_id)
           {
             case 0: // row
@@ -160,18 +155,24 @@ namespace xlsbtocsv
         }
       }
     }
-
     static public uint getcellno(byte[] buffer)
     {
       return BitConverter.ToUInt32(buffer, 0);
     }
-
     static public string getxlwidestring(byte[] buffer, int pos)
     {
       int strlen = Convert.ToInt32(BitConverter.ToUInt32(buffer, pos));
-      return System.Text.Encoding.Unicode.GetString(buffer, pos + 4, strlen*2);
+      return System.Text.Encoding.Unicode.GetString(buffer, pos + 4, strlen * 2);
     }
-
+    static public void readrecord(out int rec_id, ref byte[] data, FileStream fsSource)
+    {
+      rec_id = read_id(fsSource);
+      if (rec_id == -1)
+        return;
+      int rec_len = read_len(fsSource);
+      data = new byte[rec_len];
+      fsSource.Read(data, 0, rec_len);
+    }
     static public int read_id(FileStream fsSource)
     {
       //p186 record info
