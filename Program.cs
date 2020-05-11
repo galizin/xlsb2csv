@@ -12,10 +12,11 @@ namespace xlsbtocsv
     {
       //2.2.1
       //2.1.8
-      //string pathShStr = @"C:\user_main\python\FL_insurance_sample3 - Copy.xlsb\xl\sharedStrings.bin";
-      //string pathWksht = @"C:\user_main\python\FL_insurance_sample3 - Copy.xlsb\xl\worksheets\sheet1.bin";
-      string pathWksht = @"C:\user_main\python\xlsb\xl\worksheets\sheet1.bin";
-      string pathStyle = @"C:\user_main\python\xlsb\xl\styles.bin";
+      string pathShStr = @"C:\user_main\python\FL_insurance_sample3 - Copy.xlsb\xl\sharedStrings.bin";
+      string pathWksht = @"C:\user_main\python\FL_insurance_sample3 - Copy.xlsb\xl\worksheets\sheet1.bin";
+      string pathStyle = @"C:\user_main\python\FL_insurance_sample3 - Copy.xlsb\xl\styles.bin";
+      //string pathWksht = @"C:\user_main\python\xlsb\xl\worksheets\sheet1.bin";
+      //string pathStyle = @"C:\user_main\python\xlsb\xl\styles.bin";
       Dictionary<uint, string> shstr = new Dictionary<uint, string>();
       List<uint> datestyle = new List<uint>();
       try
@@ -24,11 +25,10 @@ namespace xlsbtocsv
         {
           loadstyles(fsSource, ref datestyle);
         }
-        //using (FileStream fsSource = new FileStream(pathShStr, FileMode.Open, FileAccess.Read))
-        //{
-        //  loadsharedstrings(fsSource, ref shstr);
-        //}
-
+        using (FileStream fsSource = new FileStream(pathShStr, FileMode.Open, FileAccess.Read))
+        {
+          loadsharedstrings(fsSource, ref shstr);
+        }
         using (FileStream fsSource = new FileStream(pathWksht, FileMode.Open, FileAccess.Read))
         {
           readworksheet(fsSource, shstr, datestyle);
@@ -128,10 +128,10 @@ namespace xlsbtocsv
               break;
             case 2: // BrtCellRk
               writecellinfo(outputFile, data, datestyles);
-              uint value  = BitConverter.ToUInt32(data, 8);
+              uint value = BitConverter.ToUInt32(data, 8);
               double x;
-              bool div100 = (value & 1u) == 1u;
-              bool fltype = (value & 2u) == 0u;
+              bool div100 = (data[8] & 1u) == 1u;
+              bool fltype = (data[8] & 2u) == 0u;
               if (fltype)
               {
                 byte[] dbl = new byte[8];
@@ -139,16 +139,18 @@ namespace xlsbtocsv
                 dbl[1] = 0;
                 dbl[2] = 0;
                 dbl[3] = 0;
-                dbl[4] = data[8];
+                dbl[4] = (byte)(data[8] & 0xFC);
                 dbl[5] = data[9];
                 dbl[6] = data[10];
-                dbl[7] = (byte) (data[11] & 0xFC);
+                dbl[7] = data[11];
                 x = BitConverter.ToDouble(dbl, 0);
               }
               else
               {
-                x = 0;
+                x = Convert.ToDouble(value >> 2);
               }
+              if (div100)
+                x = x / 100;
               outputFile.WriteLine("rk number {0} {1}{2}{3}{4} {5}", x, Convert.ToString(data[8], 16), Convert.ToString(data[9], 16), Convert.ToString(data[10], 16), Convert.ToString(data[11], 16), Convert.ToString(BitConverter.ToUInt32(data, 8), 2));
               //bit 0 - divide by 100 if 1
               //bit 1 - 30 sign. bits of float if 0 signed integer if 1
