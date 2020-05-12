@@ -68,7 +68,7 @@ namespace xlsbtocsv
                     switch (rec_id)
                     {
                         case 44: // custom
-                            string filteredstring = getxlwidestring(data, 2).Replace("[Black]", "").Replace("[Green]", "").Replace("[White]", "").Replace("[Blue]", "").Replace("[Magenta]", "").Replace("[Yellow]", "").Replace("[Cyan]", "").Replace("[Red]", "").ToLower();
+                            string filteredstring = Getxlwidestring(data, 2).Replace("[Black]", "").Replace("[Green]", "").Replace("[White]", "").Replace("[Blue]", "").Replace("[Magenta]", "").Replace("[Yellow]", "").Replace("[Cyan]", "").Replace("[Red]", "").ToLower();
                             if (filteredstring.Contains("y") || filteredstring.Contains("d") || filteredstring.Contains("h") || filteredstring.Contains("m") || filteredstring.Contains("s") || filteredstring.Contains("a") || filteredstring.Contains("p"))
                             {
                                 datestyles.Add(BitConverter.ToUInt16(data, 0));
@@ -113,7 +113,7 @@ namespace xlsbtocsv
                 switch (rec_id)
                 {
                     case 19: // Shared string
-                        shstr.Add(strid, getxlwidestring(data, 1));
+                        shstr.Add(strid, Getxlwidestring(data, 1));
                         strid++;
                         break;
                 }
@@ -132,7 +132,6 @@ namespace xlsbtocsv
                     {
                         break;
                     }
-
                     switch (rec_id)
                     {
                         case 0: // row
@@ -211,11 +210,11 @@ namespace xlsbtocsv
                             break;
                         case 6: // BrtCellSt
                             WriteCellSeparator(outputFile, data, datestyles);
-                            outputFile.Write("{0}", getxlwidestring(data, 8));
+                            outputFile.Write("{0}", StringToCsv(Getxlwidestring(data, 8)));
                             break;
                         case 7: // BrtCellIsst
                             WriteCellSeparator(outputFile, data, datestyles);
-                            outputFile.Write("{0}", shstr[BitConverter.ToUInt32(data, 8)]);
+                            outputFile.Write("{0}", StringToCsv(shstr[BitConverter.ToUInt32(data, 8)]));
                             break;
                         case 8: // BrtFmlaString
                             break;
@@ -239,7 +238,7 @@ namespace xlsbtocsv
         }
         public static bool Dateformatted(byte[] data, List<uint> datastyles)
         {
-            getcellno(data, out uint styleid);
+            Getcellno(data, out uint styleid);
             return datastyles.Contains(styleid);
         }
         public static void WriteCellSeparator(StreamWriter f, byte[] data, List<uint> datastyles)
@@ -249,14 +248,14 @@ namespace xlsbtocsv
         }
         public static bool IsFirstCell(byte[] data)
         {
-            return (getcellno(data, out _) == 0u);
+            return (Getcellno(data, out _) == 0u);
         }
-        public static uint getcellno(byte[] buffer, out uint styleid)
+        public static uint Getcellno(byte[] buffer, out uint styleid)
         {
             styleid = buffer[4] + buffer[5] * 256u + buffer[6] * 256u * 256u;
             return BitConverter.ToUInt32(buffer, 0);
         }
-        public static string getxlwidestring(byte[] buffer, int pos)
+        public static string Getxlwidestring(byte[] buffer, int pos)
         {
             int strlen = Convert.ToInt32(BitConverter.ToUInt32(buffer, pos));
             return System.Text.Encoding.Unicode.GetString(buffer, pos + 4, strlen * 2);
@@ -341,6 +340,12 @@ namespace xlsbtocsv
                 // Feb 29th 1900 will show up as Mar 1st 1900 because Python won't handle that date
                 //  return new DateTime(1899, 12, 31, 0, 0, 0) + timedelta(days=int(date), seconds=int((date % 1) * 24 * 60 * 60));
             }
+        }
+        public static string StringToCsv(string fromstr)
+        {
+            if (fromstr.Contains('"') || fromstr.Contains("\n") || fromstr.Contains(',') || fromstr.Contains("\t"))
+                return "\"" + fromstr.Replace("\"", "\"\"") + "\"";
+            return fromstr;
         }
     }
 }
