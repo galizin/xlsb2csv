@@ -10,35 +10,22 @@ namespace xlsbtocsv
     {
         static void Main(string[] args)
         {
-            //2.2.1
-            //2.1.8
             try
             {
                 using (FileStream zipToOpen = new FileStream(@"C:\user_main\python\FL_insurance_sample3.xlsb", FileMode.Open, FileAccess.Read))
                 {
                     using (ZipArchive archive = new ZipArchive(zipToOpen, ZipArchiveMode.Read))
                     {
-                        //string pathShStr = @"C:\user_main\python\FL_insurance_sample3 - Copy.xlsb\xl\sharedStrings.bin";
-                        //string pathWksht = @"C:\user_main\python\FL_insurance_sample3 - Copy.xlsb\xl\worksheets\sheet1.bin";
-                        //string pathStyle = @"C:\user_main\python\FL_insurance_sample3 - Copy.xlsb\xl\styles.bin";
-                        //string pathWksht = @"C:\user_main\python\xlsb\xl\worksheets\sheet1.bin";
-                        //string pathStyle = @"C:\user_main\python\xlsb\xl\styles.bin";
-
-                        ;
-
                         Dictionary<uint, string> shstr = new Dictionary<uint, string>();
                         List<uint> datestyle = new List<uint>();
-                        //using (FileStream fsSource = new FileStream(pathStyle, FileMode.Open, FileAccess.Read))
                         using (Stream ms = archive.GetEntry(@"xl/styles.bin").Open())
                         {
                             loadstyles(ms, ref datestyle);
                         }
-                        //using (FileStream fsSource = new FileStream(pathShStr, FileMode.Open, FileAccess.Read))
                         using (Stream ms = archive.GetEntry(@"xl/sharedStrings.bin").Open())
                         {
                             loadsharedstrings(ms, ref shstr);
                         }
-                        //using (FileStream fsSource = new FileStream(pathWksht, FileMode.Open, FileAccess.Read))
                         using (Stream ms = archive.GetEntry(@"xl/worksheets/sheet1.bin").Open())
                         {
                             readworksheet(ms, shstr, datestyle);
@@ -53,8 +40,6 @@ namespace xlsbtocsv
         }
         static public void loadstyles(Stream fsSource, ref List<uint> outDateStyles)
         {
-            //using (StreamWriter outputFile = new StreamWriter("output_styl.txt", false, Encoding.UTF8))
-            //{
             List<ushort> datestyles = new List<ushort>();
             for (int i = 14; i < 23; i++)
                 datestyles.Add((ushort)i);
@@ -73,23 +58,15 @@ namespace xlsbtocsv
                 {
                     case 44: // custom
                         string filteredstring = getxlwidestring(data, 2).Replace("[Black]", "").Replace("[Green]", "").Replace("[White]", "").Replace("[Blue]", "").Replace("[Magenta]", "").Replace("[Yellow]", "").Replace("[Cyan]", "").Replace("[Red]", "").ToLower();
-                        //[Black] [Green] [White] [Blue] [Magenta] [Yellow] [Cyan] [Red]
                         if (filteredstring.Contains("y") || filteredstring.Contains("d") || filteredstring.Contains("h") || filteredstring.Contains("m") || filteredstring.Contains("s") || filteredstring.Contains("a") || filteredstring.Contains("p"))
                         {
-                            //outputFile.Write("date ");
                             datestyles.Add(BitConverter.ToUInt16(data, 0));
                         }
-                        //outputFile.WriteLine("custom style {0} {1}", BitConverter.ToUInt16(data, 0), getxlwidestring(data, 2));
                         break;
                     case 47: // BrtXF
-                             //14-22,45-47
-                             //outputFile.WriteLine("builtin style parent {0} id {1}", BitConverter.ToUInt16(data, 0), BitConverter.ToUInt16(data, 2));
                         xf.Add(styleid, BitConverter.ToUInt16(data, 2));
                         styleid++;
                         break;
-                        //case 48: // style info              
-                        //  outputFile.WriteLine("style info id {0} builtin bit {1} no {2} level {3}", BitConverter.ToUInt16(data, 0), data[4]%1u, data[6], data[7]);
-                        //  break;
                 }
             }
             for (uint i = 0; i < styleid; i++)
@@ -97,7 +74,6 @@ namespace xlsbtocsv
                 if (datestyles.Contains(xf[i]))
                     outDateStyles.Add(i);
             }
-            //}
         }
         static public void loadsharedstrings(Stream fsSource, ref Dictionary<uint, string> shstr)
         {
@@ -163,13 +139,10 @@ namespace xlsbtocsv
                             }
                             if (div100)
                                 x = x / 100;
-                            //outputFile.WriteLine("rk number {0} {1}{2}{3}{4} {5}", x, Convert.ToString(data[8], 16), Convert.ToString(data[9], 16), Convert.ToString(data[10], 16), Convert.ToString(data[11], 16), Convert.ToString(BitConverter.ToUInt32(data, 8), 2));
                             if (dateformatted(data, datestyles))
                                 outputFile.WriteLine("rk date {0}", stringdate(x));
                             else
                                 outputFile.WriteLine("rk {0}", x);
-                            //bit 0 - divide by 100 if 1
-                            //bit 1 - 30 sign. bits of float if 0 signed integer if 1
                             break;
                         case 3: // BrtCellError
                             writecellinfo(outputFile, data, datestyles);
@@ -211,16 +184,6 @@ namespace xlsbtocsv
                         default:
                             break;
                     }
-                    //BitConverter:
-                    //ToUInt32(Byte[], Int32)
-                    //string s = System.Text.Encoding.UTF8.GetString(buffer, 0, buffer.Length);
-
-                    //RichStr: skip 1 byte then XlWideString
-
-                    //XLWideString: 4 bytes length, then unicode chars
-
-                    //DATACELL = CELLMETA (BrtCellBlank / BrtCellRk / BrtCellError / BrtCellBool / BrtCellReal / BrtCellIsst / BrtCellSt) 
-                    //FMLACELL = CELLMETA (BrtFmlaString / BrtFmlaNum / BrtFmlaBool / BrtFmlaError)
                 }
             }
         }
@@ -234,8 +197,6 @@ namespace xlsbtocsv
         {
             uint styleid;
             f.Write("col {0} style {1} ", getcellno(data, out styleid), styleid);
-            //if (datastyles.Contains(styleid))
-            //f.Write("date ");
         }
         static public uint getcellno(byte[] buffer, out uint styleid)
         {
@@ -258,7 +219,6 @@ namespace xlsbtocsv
         }
         static public int read_id(Stream fsSource)
         {
-            //p186 record info
             int b = fsSource.ReadByte();
             if (b == -1)
                 return -1;
@@ -274,7 +234,6 @@ namespace xlsbtocsv
         }
         static public int read_len(Stream fsSource)
         {
-            //2147483647 - upper bound
             int multiplier = 1;
             int accumulated = 0;
             for (int i = 0; i < 4; i++)
