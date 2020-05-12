@@ -13,7 +13,6 @@ namespace xlsbtocsv
         {
             try
             {
-                //using (FileStream zipToOpen = new FileStream(@"C:\user_main\python\FL_insurance_sample3.xlsb", FileMode.Open, FileAccess.Read))
                 using (FileStream zipToOpen = new FileStream(Directory.GetFiles(Environment.CurrentDirectory).FirstOrDefault(a => a.EndsWith(".xlsb")), FileMode.Open, FileAccess.Read))
                 {
                     using (ZipArchive archive = new ZipArchive(zipToOpen, ZipArchiveMode.Read))
@@ -77,7 +76,7 @@ namespace xlsbtocsv
                     outDateStyles.Add(i);
             }
         }
-        static public void Loadsharedstrings(Stream fsSource, ref Dictionary<uint, string> shstr)
+        public static void Loadsharedstrings(Stream fsSource, ref Dictionary<uint, string> shstr)
         {
             uint strid = 0;
             while (1 == 1)
@@ -96,7 +95,7 @@ namespace xlsbtocsv
                 }
             }
         }
-        static public void Readworksheet(Stream fsSource, Dictionary<uint, string> shstr, List<uint> datestyles)
+        public static void Readworksheet(Stream fsSource, Dictionary<uint, string> shstr, List<uint> datestyles)
         {
             using (StreamWriter outputFile = new StreamWriter("output.txt", false, Encoding.UTF8))
             {
@@ -110,7 +109,6 @@ namespace xlsbtocsv
                     switch (rec_id)
                     {
                         case 0: // row
-                            //outputFile.WriteLine("row {0}", BitConverter.ToUInt32(data, 0));
                             if (firstline)
                             {
                                 firstline = false;
@@ -119,7 +117,6 @@ namespace xlsbtocsv
                             {
                                 outputFile.WriteLine("\n");
                             }
-
                             break;
                         case 1: // BrtCellBlank
                             Writecellinfo(outputFile, data, datestyles);
@@ -198,28 +195,28 @@ namespace xlsbtocsv
                 }
             }
         }
-        static public bool Dateformatted(byte[] data, List<uint> datastyles)
+        public static bool Dateformatted(byte[] data, List<uint> datastyles)
         {
             uint styleid;
             getcellno(data, out styleid);
             return datastyles.Contains(styleid);
         }
-        static public void Writecellinfo(StreamWriter f, byte[] data, List<uint> datastyles)
+        public static void Writecellinfo(StreamWriter f, byte[] data, List<uint> datastyles)
         {
             uint styleid;
             f.Write("col {0} style {1} ", getcellno(data, out styleid), styleid);
         }
-        static public uint getcellno(byte[] buffer, out uint styleid)
+        public static uint getcellno(byte[] buffer, out uint styleid)
         {
             styleid = buffer[4] + buffer[5] * 256u + buffer[6] * 256u * 256u;
             return BitConverter.ToUInt32(buffer, 0);
         }
-        static public string getxlwidestring(byte[] buffer, int pos)
+        public static string getxlwidestring(byte[] buffer, int pos)
         {
             int strlen = Convert.ToInt32(BitConverter.ToUInt32(buffer, pos));
             return System.Text.Encoding.Unicode.GetString(buffer, pos + 4, strlen * 2);
         }
-        static public void Readrecord(out int rec_id, ref byte[] data, Stream fsSource)
+        public static void Readrecord(out int rec_id, ref byte[] data, Stream fsSource)
         {
             rec_id = Read_id(fsSource);
             if (rec_id == -1)
@@ -228,7 +225,7 @@ namespace xlsbtocsv
             data = new byte[rec_len];
             fsSource.Read(data, 0, rec_len);
         }
-        static public int Read_id(Stream fsSource)
+        public static int Read_id(Stream fsSource)
         {
             int b = fsSource.ReadByte();
             if (b == -1)
@@ -243,7 +240,7 @@ namespace xlsbtocsv
                 return b2 * 128 + (b - 128);
             }
         }
-        static public int Read_len(Stream fsSource)
+        public static int Read_len(Stream fsSource)
         {
             int multiplier = 1;
             int accumulated = 0;
@@ -261,7 +258,7 @@ namespace xlsbtocsv
             }
             throw new IndexOutOfRangeException("unable to calculate record length");
         }
-        static public string Stringdate(double innumeric)
+        public static string Stringdate(double innumeric)
         {
             if (Math.Truncate(innumeric) == 0)
             {
