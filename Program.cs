@@ -53,27 +53,41 @@ namespace xlsbtocsv
             }
             uint styleid = 0;
             Dictionary<uint, ushort> xf = new Dictionary<uint, ushort>();
-            while (1 == 1)
+            //using (StreamWriter outputFile = new StreamWriter("styleinfo.txt", false, Encoding.UTF8))
             {
-                byte[] data = null;
-                Readrecord(out int rec_id, ref data, fsSource);
-                if (rec_id == -1)
+                bool cellxfsection = false;
+                while (1 == 1)
                 {
-                    break;
-                }
-                switch (rec_id)
-                {
-                    case 44: // custom
-                        string filteredstring = getxlwidestring(data, 2).Replace("[Black]", "").Replace("[Green]", "").Replace("[White]", "").Replace("[Blue]", "").Replace("[Magenta]", "").Replace("[Yellow]", "").Replace("[Cyan]", "").Replace("[Red]", "").ToLower();
-                        if (filteredstring.Contains("y") || filteredstring.Contains("d") || filteredstring.Contains("h") || filteredstring.Contains("m") || filteredstring.Contains("s") || filteredstring.Contains("a") || filteredstring.Contains("p"))
-                        {
-                            datestyles.Add(BitConverter.ToUInt16(data, 0));
-                        }
+                    byte[] data = null;
+                    Readrecord(out int rec_id, ref data, fsSource);                    
+                    if (rec_id == -1)
+                    {
                         break;
-                    case 47: // BrtXF
-                        xf.Add(styleid, BitConverter.ToUInt16(data, 2));
-                        styleid++;
-                        break;
+                    }
+                    //outputFile.WriteLine("{0} {1}", rec_id, BitConverter.ToString(data));
+                    switch (rec_id)
+                    {
+                        case 44: // custom
+                            string filteredstring = getxlwidestring(data, 2).Replace("[Black]", "").Replace("[Green]", "").Replace("[White]", "").Replace("[Blue]", "").Replace("[Magenta]", "").Replace("[Yellow]", "").Replace("[Cyan]", "").Replace("[Red]", "").ToLower();
+                            if (filteredstring.Contains("y") || filteredstring.Contains("d") || filteredstring.Contains("h") || filteredstring.Contains("m") || filteredstring.Contains("s") || filteredstring.Contains("a") || filteredstring.Contains("p"))
+                            {
+                                datestyles.Add(BitConverter.ToUInt16(data, 0));
+                            }
+                            break;
+                        case 47: // BrtXF
+                            if(cellxfsection)
+                            {
+                                xf.Add(styleid, BitConverter.ToUInt16(data, 2));
+                                styleid++;
+                            }
+                            break;
+                        case 617:
+                            cellxfsection = true;
+                            break;
+                        case 618:
+                            cellxfsection = false;
+                            break;
+                    }
                 }
             }
             for (uint i = 0; i < styleid; i++)
