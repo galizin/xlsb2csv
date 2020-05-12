@@ -175,7 +175,6 @@ namespace xlsbtocsv
                             {
                                 x /= 100;
                             }
-
                             if (Dateformatted(data, datestyles))
                             {
                                 //outputFile.WriteLine("rk date {0}", Stringdate(x));
@@ -186,17 +185,49 @@ namespace xlsbtocsv
                                 //outputFile.WriteLine("rk {0}", x);
                                 outputFile.Write("{0}", x);
                             }
-
                             break;
                         case 3: // BrtCellError
+                        case 11: // BrtFmlaError
                             WriteCellSeparator(outputFile, data, datestyles);
-                            outputFile.Write("{0}", data[8]);
+                            string err = "";
+                            switch (data[8])
+                            {
+                                case (byte)0x00u:
+                                    err = "#NULL!";
+                                    break;
+                                case (byte)0x07u:
+                                    err = "#DIV/0!";
+                                    break;
+                                case (byte)0x0Fu:
+                                    err = "#VALUE!";
+                                    break;
+                                case (byte)0x17u:
+                                    err = "#REF!";
+                                    break;
+                                case (byte)0x1Du:
+                                    err = "#NAME?";
+                                    break;
+                                case (byte)0x24u:
+                                    err = "#NUM!";
+                                    break;
+                                case (byte)0x2Au:
+                                    err = "#N/A";
+                                    break;
+                                case (byte)0x2Bu:
+                                    err = "#GETTING_DATA";
+                                    break;
+                                default:
+                                    break;
+                            }
+                            outputFile.Write(err);//data[8]);
                             break;
                         case 4: // BrtCellBool
+                        case 10: // BrtFmlaBool 
                             WriteCellSeparator(outputFile, data, datestyles);
                             outputFile.Write("{0}", data[8]);
                             break;
                         case 5: // BrtCellReal
+                        case 9: // BrtFmlaNum 
                             WriteCellSeparator(outputFile, data, datestyles);
                             if (Dateformatted(data, datestyles))
                             {
@@ -206,23 +237,15 @@ namespace xlsbtocsv
                             {
                                 outputFile.Write("{0}", BitConverter.ToDouble(data, 8));
                             }
-
                             break;
-                        case 6: // BrtCellSt
+                        case 6: // BrtCellSt 
+                        case 8: //BrtFmlaString
                             WriteCellSeparator(outputFile, data, datestyles);
                             outputFile.Write("{0}", StringToCsv(Getxlwidestring(data, 8)));
                             break;
                         case 7: // BrtCellIsst
                             WriteCellSeparator(outputFile, data, datestyles);
                             outputFile.Write("{0}", StringToCsv(shstr[BitConverter.ToUInt32(data, 8)]));
-                            break;
-                        case 8: // BrtFmlaString
-                            break;
-                        case 9: // BrtFmlaNum 
-                            break;
-                        case 10: // BrtFmlaBool 
-                            break;
-                        case 11: // BrtFmlaError
                             break;
                         //case 19: // Shared string
                         //    outputFile.WriteLine("shstr {0}", fsSource.Position);
