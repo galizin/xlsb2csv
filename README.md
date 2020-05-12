@@ -1,6 +1,8 @@
 # xlsb2csv
 convert xlsb data to csv based on protocol revision 12.2 (see "[MS-XLSB]: Excel (.xlsb) Binary File Format" below)
 
+depends on .net Framework 4.5 or higher for zip functionality
+
 references to information used in this project:
 
 pyxlsb (https://github.com/willtrnr/pyxlsb)
