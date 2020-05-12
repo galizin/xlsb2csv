@@ -59,7 +59,7 @@ namespace xlsbtocsv
                 while (1 == 1)
                 {
                     byte[] data = null;
-                    Readrecord(out int rec_id, ref data, fsSource);                    
+                    Readrecord(out int rec_id, ref data, fsSource);
                     if (rec_id == -1)
                     {
                         break;
@@ -75,7 +75,7 @@ namespace xlsbtocsv
                             }
                             break;
                         case 47: // BrtXF
-                            if(cellxfsection)
+                            if (cellxfsection)
                             {
                                 xf.Add(styleid, BitConverter.ToUInt16(data, 2));
                                 styleid++;
