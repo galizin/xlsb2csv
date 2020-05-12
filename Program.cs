@@ -3,16 +3,18 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 
 namespace xlsbtocsv
 {
     class Program
     {
         static void Main(string[] args)
-        {
+        {            
             try
             {
-                using (FileStream zipToOpen = new FileStream(@"C:\user_main\python\FL_insurance_sample3.xlsb", FileMode.Open, FileAccess.Read))
+                //using (FileStream zipToOpen = new FileStream(@"C:\user_main\python\FL_insurance_sample3.xlsb", FileMode.Open, FileAccess.Read))
+                using (FileStream zipToOpen = new FileStream(Directory.GetFiles(Environment.CurrentDirectory).FirstOrDefault(a => a.EndsWith(".xlsb")), FileMode.Open, FileAccess.Read))
                 {
                     using (ZipArchive archive = new ZipArchive(zipToOpen, ZipArchiveMode.Read))
                     {
