@@ -7,13 +7,14 @@ using System.Text;
 
 namespace xlsbtocsv
 {
-    class Program
+    internal class Program
     {
         private static void Main()
         {
             try
             {
-                using (FileStream zipToOpen = new FileStream(Directory.GetFiles(Environment.CurrentDirectory).FirstOrDefault(a => a.EndsWith(".xlsb")), FileMode.Open, FileAccess.Read))
+                string filename = Directory.GetFiles(Environment.CurrentDirectory).FirstOrDefault(a => a.EndsWith(".xlsb"));
+                using (FileStream zipToOpen = new FileStream(filename, FileMode.Open, FileAccess.Read))
                 {
                     using (ZipArchive archive = new ZipArchive(zipToOpen, ZipArchiveMode.Read))
                     {
@@ -29,7 +30,7 @@ namespace xlsbtocsv
                         }
                         using (Stream ms = archive.GetEntry(@"xl/worksheets/sheet1.bin").Open())
                         {
-                            Readworksheet(ms, shstr, datestyle);
+                            Readworksheet(ms, shstr, datestyle, filename);
                         }
                     }
                 }
@@ -43,18 +44,23 @@ namespace xlsbtocsv
         {
             List<ushort> datestyles = new List<ushort>();
             for (int i = 14; i < 23; i++)
+            {
                 datestyles.Add((ushort)i);
+            }
             for (int i = 45; i < 48; i++)
+            {
                 datestyles.Add((ushort)i);
+            }
             uint styleid = 0;
             Dictionary<uint, ushort> xf = new Dictionary<uint, ushort>();
             while (1 == 1)
             {
-                int rec_id;
                 byte[] data = null;
-                Readrecord(out rec_id, ref data, fsSource);
+                Readrecord(out int rec_id, ref data, fsSource);
                 if (rec_id == -1)
+                {
                     break;
+                }
                 switch (rec_id)
                 {
                     case 44: // custom
@@ -73,7 +79,9 @@ namespace xlsbtocsv
             for (uint i = 0; i < styleid; i++)
             {
                 if (datestyles.Contains(xf[i]))
+                {
                     outDateStyles.Add(i);
+                }
             }
         }
         public static void Loadsharedstrings(Stream fsSource, ref Dictionary<uint, string> shstr)
@@ -81,11 +89,13 @@ namespace xlsbtocsv
             uint strid = 0;
             while (1 == 1)
             {
-                int rec_id;
                 byte[] data = null;
-                Readrecord(out rec_id, ref data, fsSource);
+                Readrecord(out int rec_id, ref data, fsSource);
                 if (rec_id == -1)
+                {
                     break;
+                }
+
                 switch (rec_id)
                 {
                     case 19: // Shared string
@@ -95,9 +105,9 @@ namespace xlsbtocsv
                 }
             }
         }
-        public static void Readworksheet(Stream fsSource, Dictionary<uint, string> shstr, List<uint> datestyles)
+        public static void Readworksheet(Stream fsSource, Dictionary<uint, string> shstr, List<uint> datestyles, string fname)
         {
-            using (StreamWriter outputFile = new StreamWriter("output.txt", false, Encoding.UTF8))
+            using (StreamWriter outputFile = new StreamWriter(Path.GetFileNameWithoutExtension(fname) + ".txt", false, Encoding.UTF8))
             {
                 bool firstline = true;
                 while (1 == 1)
@@ -105,7 +115,10 @@ namespace xlsbtocsv
                     byte[] data = null;
                     Readrecord(out int rec_id, ref data, fsSource);
                     if (rec_id == -1)
+                    {
                         break;
+                    }
+
                     switch (rec_id)
                     {
                         case 0: // row
@@ -115,15 +128,15 @@ namespace xlsbtocsv
                             }
                             else
                             {
-                                outputFile.WriteLine("\n");
+                                outputFile.Write("\n");
                             }
                             break;
                         case 1: // BrtCellBlank
-                            Writecellinfo(outputFile, data, datestyles);
-                            outputFile.WriteLine("blank cell");
+                            WriteCellSeparator(outputFile, data, datestyles);
+                            //outputFile.WriteLine("blank cell");
                             break;
                         case 2: // BrtCellRk
-                            Writecellinfo(outputFile, data, datestyles);
+                            WriteCellSeparator(outputFile, data, datestyles);
                             uint value = BitConverter.ToUInt32(data, 8);
                             double x;
                             bool div100 = (data[8] & 1u) == 1u;
@@ -146,34 +159,49 @@ namespace xlsbtocsv
                                 x = Convert.ToDouble(value >> 2);
                             }
                             if (div100)
+                            {
                                 x /= 100;
+                            }
+
                             if (Dateformatted(data, datestyles))
-                                outputFile.WriteLine("rk date {0}", Stringdate(x));
+                            {
+                                //outputFile.WriteLine("rk date {0}", Stringdate(x));
+                                outputFile.Write("{0}", Stringdate(x));
+                            }
                             else
-                                outputFile.WriteLine("rk {0}", x);
+                            {
+                                //outputFile.WriteLine("rk {0}", x);
+                                outputFile.Write("{0}", x);
+                            }
+
                             break;
                         case 3: // BrtCellError
-                            Writecellinfo(outputFile, data, datestyles);
-                            outputFile.WriteLine("err {0}", data[8]);
+                            WriteCellSeparator(outputFile, data, datestyles);
+                            outputFile.Write("{0}", data[8]);
                             break;
                         case 4: // BrtCellBool
-                            Writecellinfo(outputFile, data, datestyles);
-                            outputFile.WriteLine("bool {0}", data[8]);
+                            WriteCellSeparator(outputFile, data, datestyles);
+                            outputFile.Write("{0}", data[8]);
                             break;
                         case 5: // BrtCellReal
-                            Writecellinfo(outputFile, data, datestyles);
+                            WriteCellSeparator(outputFile, data, datestyles);
                             if (Dateformatted(data, datestyles))
-                                outputFile.WriteLine("dbl date {0}", Stringdate(BitConverter.ToDouble(data, 8)));
+                            {
+                                outputFile.Write("{0}", Stringdate(BitConverter.ToDouble(data, 8)));
+                            }
                             else
-                                outputFile.WriteLine("dbl {0}", BitConverter.ToDouble(data, 8));
+                            {
+                                outputFile.Write("{0}", BitConverter.ToDouble(data, 8));
+                            }
+
                             break;
                         case 6: // BrtCellSt
-                            Writecellinfo(outputFile, data, datestyles);
-                            outputFile.WriteLine("value {0}", getxlwidestring(data, 8));
+                            WriteCellSeparator(outputFile, data, datestyles);
+                            outputFile.Write("{0}", getxlwidestring(data, 8));
                             break;
                         case 7: // BrtCellIsst
-                            Writecellinfo(outputFile, data, datestyles);
-                            outputFile.WriteLine("isst {0}", shstr[BitConverter.ToUInt32(data, 8)]);
+                            WriteCellSeparator(outputFile, data, datestyles);
+                            outputFile.Write("{0}", shstr[BitConverter.ToUInt32(data, 8)]);
                             break;
                         case 8: // BrtFmlaString
                             break;
@@ -183,12 +211,12 @@ namespace xlsbtocsv
                             break;
                         case 11: // BrtFmlaError
                             break;
-                        case 19: // Shared string
-                            outputFile.WriteLine("shstr {0}", fsSource.Position);
-                            break;
-                        case 44: // fmt
-                            outputFile.WriteLine("fmt {0}", fsSource.Position);
-                            break;
+                        //case 19: // Shared string
+                        //    outputFile.WriteLine("shstr {0}", fsSource.Position);
+                        //    break;
+                        //case 44: // fmt
+                        //    outputFile.WriteLine("fmt {0}", fsSource.Position);
+                        //    break;
                         default:
                             break;
                     }
@@ -197,14 +225,17 @@ namespace xlsbtocsv
         }
         public static bool Dateformatted(byte[] data, List<uint> datastyles)
         {
-            uint styleid;
-            getcellno(data, out styleid);
+            getcellno(data, out uint styleid);
             return datastyles.Contains(styleid);
         }
-        public static void Writecellinfo(StreamWriter f, byte[] data, List<uint> datastyles)
+        public static void WriteCellSeparator(StreamWriter f, byte[] data, List<uint> datastyles)
         {
-            uint styleid;
-            f.Write("col {0} style {1} ", getcellno(data, out styleid), styleid);
+            //f.Write("col {0} style {1} ", getcellno(data, out uint styleid), styleid);
+            f.Write(IsFirstCell(data) ? "" : "\t");
+        }
+        public static bool IsFirstCell(byte[] data)
+        {
+            return (getcellno(data, out _) == 0u);
         }
         public static uint getcellno(byte[] buffer, out uint styleid)
         {
@@ -220,7 +251,10 @@ namespace xlsbtocsv
         {
             rec_id = Read_id(fsSource);
             if (rec_id == -1)
+            {
                 return;
+            }
+
             int rec_len = Read_len(fsSource);
             data = new byte[rec_len];
             fsSource.Read(data, 0, rec_len);
@@ -229,14 +263,22 @@ namespace xlsbtocsv
         {
             int b = fsSource.ReadByte();
             if (b == -1)
+            {
                 return -1;
+            }
+
             if (b < 128)
+            {
                 return b;
+            }
             else
             {
                 int b2 = fsSource.ReadByte();
                 if (b2 == -1)
+                {
                     return -1;
+                }
+
                 return b2 * 128 + (b - 128);
             }
         }
@@ -248,13 +290,22 @@ namespace xlsbtocsv
             {
                 int b = fsSource.ReadByte();
                 if (b == -1)
+                {
                     return -1;
+                }
+
                 if (i == 3 && b > 127)
+                {
                     b -= 128;
+                }
+
                 if (b < 128)
+                {
                     return b * multiplier + accumulated;
+                }
+
                 accumulated += b * multiplier;
-                multiplier = multiplier * 128;
+                multiplier *= 128;
             }
             throw new IndexOutOfRangeException("unable to calculate record length");
         }
@@ -267,7 +318,9 @@ namespace xlsbtocsv
             else
             {
                 if (Math.Truncate(innumeric) >= 61)
+                {
                     innumeric -= 1;
+                }
                 // According to Lotus 1-2-3, Feb 29th 1900 is a real thing, therefore we have to remove one day after that date
                 return new DateTime(1899, 12, 31, 0, 0, 0).AddDays(Math.Truncate(innumeric)).AddSeconds(Math.Truncate((innumeric % 1) * 24 * 60 * 60)).ToString("o");
                 //  else
