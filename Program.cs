@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
+using System.IO.Compression;
 
 namespace xlsbtocsv
 {
@@ -12,26 +13,32 @@ namespace xlsbtocsv
     {
       //2.2.1
       //2.1.8
-      string pathShStr = @"C:\user_main\python\FL_insurance_sample3 - Copy.xlsb\xl\sharedStrings.bin";
-      string pathWksht = @"C:\user_main\python\FL_insurance_sample3 - Copy.xlsb\xl\worksheets\sheet1.bin";
-      string pathStyle = @"C:\user_main\python\FL_insurance_sample3 - Copy.xlsb\xl\styles.bin";
-      //string pathWksht = @"C:\user_main\python\xlsb\xl\worksheets\sheet1.bin";
-      //string pathStyle = @"C:\user_main\python\xlsb\xl\styles.bin";
-      Dictionary<uint, string> shstr = new Dictionary<uint, string>();
-      List<uint> datestyle = new List<uint>();
       try
       {
-        using (FileStream fsSource = new FileStream(pathStyle, FileMode.Open, FileAccess.Read))
+        using (FileStream zipToOpen = new FileStream(@"C:\user_main\python\FL_insurance_sample3.xlsb", FileMode.Open, FileAccess.Read))
         {
-          loadstyles(fsSource, ref datestyle);
-        }
-        using (FileStream fsSource = new FileStream(pathShStr, FileMode.Open, FileAccess.Read))
-        {
-          loadsharedstrings(fsSource, ref shstr);
-        }
-        using (FileStream fsSource = new FileStream(pathWksht, FileMode.Open, FileAccess.Read))
-        {
-          readworksheet(fsSource, shstr, datestyle);
+          using (ZipArchive archive = new ZipArchive(zipToOpen, ZipArchiveMode.Read))
+          {
+            string pathShStr = @"C:\user_main\python\FL_insurance_sample3 - Copy.xlsb\xl\sharedStrings.bin";
+            string pathWksht = @"C:\user_main\python\FL_insurance_sample3 - Copy.xlsb\xl\worksheets\sheet1.bin";
+            string pathStyle = @"C:\user_main\python\FL_insurance_sample3 - Copy.xlsb\xl\styles.bin";
+            //string pathWksht = @"C:\user_main\python\xlsb\xl\worksheets\sheet1.bin";
+            //string pathStyle = @"C:\user_main\python\xlsb\xl\styles.bin";
+            Dictionary<uint, string> shstr = new Dictionary<uint, string>();
+            List<uint> datestyle = new List<uint>();
+            using (FileStream fsSource = new FileStream(pathStyle, FileMode.Open, FileAccess.Read))
+            {
+              loadstyles(fsSource, ref datestyle);
+            }
+            using (FileStream fsSource = new FileStream(pathShStr, FileMode.Open, FileAccess.Read))
+            {
+              loadsharedstrings(fsSource, ref shstr);
+            }
+            using (FileStream fsSource = new FileStream(pathWksht, FileMode.Open, FileAccess.Read))
+            {
+              readworksheet(fsSource, shstr, datestyle);
+            }
+          }
         }
       }
       catch (FileNotFoundException ioEx)
