@@ -123,7 +123,7 @@ namespace xlsbtocsv
         {
             using (StreamWriter outputFile = new StreamWriter(Path.GetFileNameWithoutExtension(fname) + ".txt", false, Encoding.UTF8))
             {
-                Console.WriteLine("Importing {0}", fname);
+                Console.WriteLine("converting {0}", fname);
                 Console.Write("reached row ");
                 int rowno = 0;
                 int lastmsglen = 0;
