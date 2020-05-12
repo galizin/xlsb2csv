@@ -1,3 +1,10 @@
 nppBackup*/
 bin*/
 obj*/
+/xlsbtocsv.suo
+/xlsbtocsv.sln
+/xlsbtocsv.csproj.user
+/.vs/xlsbtocsv/v16/.suo
+/Properties/AssemblyInfo.cs
+/app.config
+/xlsbtocsv.csproj
