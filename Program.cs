@@ -123,6 +123,10 @@ namespace xlsbtocsv
         {
             using (StreamWriter outputFile = new StreamWriter(Path.GetFileNameWithoutExtension(fname) + ".txt", false, Encoding.UTF8))
             {
+                Console.WriteLine("Importing {0}", fname);
+                Console.Write("reached row ");
+                int rowno = 0;
+                int lastmsglen = 0;
                 bool firstline = true;
                 while (1 == 1)
                 {
@@ -142,6 +146,14 @@ namespace xlsbtocsv
                             else
                             {
                                 outputFile.Write("\n");
+                                rowno++;
+                            }
+                            if (rowno % 10000 == 0)
+                            {
+                                if (lastmsglen != 0)
+                                    Console.Write(new String('\b', lastmsglen));
+                                Console.Write(rowno.ToString());
+                                lastmsglen = rowno.ToString().Length;
                             }
                             break;
                         case 1: // BrtCellBlank
@@ -257,6 +269,11 @@ namespace xlsbtocsv
                             break;
                     }
                 }
+                if (lastmsglen != 0)
+                    Console.Write(new String('\b', lastmsglen));
+                Console.WriteLine(rowno.ToString());
+                Console.WriteLine("finished");
+
             }
         }
         public static bool Dateformatted(byte[] data, List<uint> datastyles)
