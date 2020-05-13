@@ -100,200 +100,200 @@ namespace xlsbtocsv
         }
         public static void Loadsharedstrings(Stream fsSource, ref Dictionary<uint, string> shstr)
         {
-            using (StreamWriter outputFiledbg = new StreamWriter("shstr.txt", false, Encoding.UTF8))
+            //using (StreamWriter outputFiledbg = new StreamWriter("shstr.txt", false, Encoding.UTF8))
+            //{
+            //using (StreamWriter outputFiledbg1 = new StreamWriter("shstrstruct.txt", false, Encoding.UTF8))
+            //{
+            uint strid = 0;
+            while (1 == 1)
             {
-                using (StreamWriter outputFiledbg1 = new StreamWriter("shstrstruct.txt", false, Encoding.UTF8))
+                byte[] data = null;
+                Readrecord(out int rec_id, ref data, fsSource);
+                if (rec_id == -1)
                 {
-                    uint strid = 0;
-                    while (1 == 1)
-                    {
-                        byte[] data = null;
-                        Readrecord(out int rec_id, ref data, fsSource);
-                        if (rec_id == -1)
-                        {
-                            break;
-                        }
-                        outputFiledbg1.WriteLine("{0} {1}", rec_id, BitConverter.ToString(data));
-                        switch (rec_id)
-                        {
-                            case 19: // Shared string
-                                shstr.Add(strid, Getxlwidestring(data, 1));
-                                outputFiledbg.WriteLine("{0} {1}", strid, Getxlwidestring(data, 1));
-                                strid++;
-                                break;
-                            default:
+                    break;
+                }
+                //outputFiledbg1.WriteLine("{0} {1}", rec_id, BitConverter.ToString(data));
+                switch (rec_id)
+                {
+                    case 19: // Shared string
+                        shstr.Add(strid, Getxlwidestring(data, 1));
+                        //outputFiledbg.WriteLine("{0} {1}", strid, Getxlwidestring(data, 1));
+                        strid++;
+                        break;
+                    default:
 
-                                break;
-                        }
-                    }
+                        break;
                 }
             }
+            //}
+            //}
         }
         public static void Readworksheet(Stream fsSource, Dictionary<uint, string> shstr, List<uint> datestyles, string fname)
         {
-            using (StreamWriter outputFiledbg = new StreamWriter(Path.GetFileNameWithoutExtension(fname) + "shstr.txt", false, Encoding.UTF8))
-            {
+            //using (StreamWriter outputFiledbg = new StreamWriter(Path.GetFileNameWithoutExtension(fname) + "shstr.txt", false, Encoding.UTF8))
+            //{
 
-                using (StreamWriter outputFile = new StreamWriter(Path.GetFileNameWithoutExtension(fname) + ".txt", false, Encoding.UTF8))
+            using (StreamWriter outputFile = new StreamWriter(Path.GetFileNameWithoutExtension(fname) + ".txt", false, Encoding.UTF8))
+            {
+                Console.WriteLine("converting {0}", fname);
+                Console.Write("reached row ");
+                int rowno = 0;
+                int lastmsglen = 0;
+                uint lastcol = 0;
+                bool firstline = true;
+                while (1 == 1)
                 {
-                    Console.WriteLine("converting {0}", fname);
-                    Console.Write("reached row ");
-                    int rowno = 0;
-                    int lastmsglen = 0;
-                    uint lastcol = 0;
-                    bool firstline = true;
-                    while (1 == 1)
+                    byte[] data = null;
+                    Readrecord(out int rec_id, ref data, fsSource);
+                    if (rec_id == -1)
                     {
-                        byte[] data = null;
-                        Readrecord(out int rec_id, ref data, fsSource);
-                        if (rec_id == -1)
-                        {
-                            break;
-                        }
-                        switch (rec_id)
-                        {
-                            case 0: // row
-                                if (firstline)
-                                {
-                                    firstline = false;
-                                    lastcol = 0;
-                                }
-                                else
-                                {
-                                    outputFile.Write("\n");
-                                    rowno++;
-                                }
-                                if (rowno % 10000 == 0)
-                                {
-                                    if (lastmsglen != 0)
-                                        Console.Write(new String('\b', lastmsglen));
-                                    Console.Write(rowno.ToString());
-                                    lastmsglen = rowno.ToString().Length;
-                                }
-                                break;
-                            case 1: // BrtCellBlank
-                                WriteCellSeparator(outputFile, data, datestyles, ref lastcol);
-                                //outputFile.WriteLine("blank cell");
-                                break;
-                            case 2: // BrtCellRk
-                                WriteCellSeparator(outputFile, data, datestyles, ref lastcol);
-                                uint value = BitConverter.ToUInt32(data, 8);
-                                double x;
-                                bool div100 = (data[8] & 1u) == 1u;
-                                bool fltype = (data[8] & 2u) == 0u;
-                                if (fltype)
-                                {
-                                    byte[] dbl = new byte[8];
-                                    dbl[0] = 0;
-                                    dbl[1] = 0;
-                                    dbl[2] = 0;
-                                    dbl[3] = 0;
-                                    dbl[4] = (byte)(data[8] & 0xFC);
-                                    dbl[5] = data[9];
-                                    dbl[6] = data[10];
-                                    dbl[7] = data[11];
-                                    x = BitConverter.ToDouble(dbl, 0);
-                                }
-                                else
-                                {
-                                    x = Convert.ToDouble(value >> 2);
-                                }
-                                if (div100)
-                                {
-                                    x /= 100;
-                                }
-                                if (Dateformatted(data, datestyles))
-                                {
-                                    //outputFile.WriteLine("rk date {0}", Stringdate(x));
-                                    outputFile.Write("{0}", Stringdate(x));
-                                }
-                                else
-                                {
-                                    //outputFile.WriteLine("rk {0}", x);
-                                    outputFile.Write("{0}", x);
-                                }
-                                break;
-                            case 3: // BrtCellError
-                            case 11: // BrtFmlaError
-                                WriteCellSeparator(outputFile, data, datestyles, ref lastcol);
-                                string err = "";
-                                switch (data[8])
-                                {
-                                    case (byte)0x00u:
-                                        err = "#NULL!";
-                                        break;
-                                    case (byte)0x07u:
-                                        err = "#DIV/0!";
-                                        break;
-                                    case (byte)0x0Fu:
-                                        err = "#VALUE!";
-                                        break;
-                                    case (byte)0x17u:
-                                        err = "#REF!";
-                                        break;
-                                    case (byte)0x1Du:
-                                        err = "#NAME?";
-                                        break;
-                                    case (byte)0x24u:
-                                        err = "#NUM!";
-                                        break;
-                                    case (byte)0x2Au:
-                                        err = "#N/A";
-                                        break;
-                                    case (byte)0x2Bu:
-                                        err = "#GETTING_DATA";
-                                        break;
-                                    default:
-                                        break;
-                                }
-                                outputFile.Write(err);//data[8]);
-                                break;
-                            case 4: // BrtCellBool
-                            case 10: // BrtFmlaBool 
-                                WriteCellSeparator(outputFile, data, datestyles, ref lastcol);
-                                outputFile.Write("{0}", data[8]);
-                                break;
-                            case 5: // BrtCellReal
-                            case 9: // BrtFmlaNum 
-                                WriteCellSeparator(outputFile, data, datestyles, ref lastcol);
-                                if (Dateformatted(data, datestyles))
-                                {
-                                    outputFile.Write("{0}", Stringdate(BitConverter.ToDouble(data, 8)));
-                                }
-                                else
-                                {
-                                    outputFile.Write("{0}", BitConverter.ToDouble(data, 8));
-                                }
-                                break;
-                            case 6: // BrtCellSt 
-                            case 8: //BrtFmlaString
-                                WriteCellSeparator(outputFile, data, datestyles, ref lastcol);
-                                outputFile.Write("{0}", StringToCsv(Getxlwidestring(data, 8)));
-                                break;
-                            case 7: // BrtCellIsst
-                                WriteCellSeparator(outputFile, data, datestyles, ref lastcol);
-                                if (!shstr.ContainsKey(BitConverter.ToUInt32(data, 8)))
-                                    outputFiledbg.WriteLine("shstr {0} missing", BitConverter.ToUInt32(data, 8));
-                                else
-                                    outputFile.Write("{0}", StringToCsv(shstr[BitConverter.ToUInt32(data, 8)]));
-                                break;
-                            case 19: // Shared string
-                                outputFiledbg.WriteLine("shstr {0}", Getxlwidestring(data, 1));
-                                //shstr.Add();
-                                break;
-                            //case 44: // fmt
-                            //    outputFile.WriteLine("fmt {0}", fsSource.Position);
-                            //    break;
-                            default:
-                                break;
-                        }
+                        break;
                     }
-                    if (lastmsglen != 0)
-                        Console.Write(new String('\b', lastmsglen));
-                    Console.WriteLine(rowno.ToString());
-                    Console.WriteLine("finished");
+                    switch (rec_id)
+                    {
+                        case 0: // row
+                            if (firstline)
+                            {
+                                firstline = false;
+                                lastcol = 0;
+                            }
+                            else
+                            {
+                                outputFile.Write("\r\n");
+                                rowno++;
+                            }
+                            if (rowno % 10000 == 0)
+                            {
+                                if (lastmsglen != 0)
+                                    Console.Write(new String('\b', lastmsglen));
+                                Console.Write(rowno.ToString());
+                                lastmsglen = rowno.ToString().Length;
+                            }
+                            break;
+                        case 1: // BrtCellBlank
+                            WriteCellSeparator(outputFile, data, datestyles, ref lastcol);
+                            //outputFile.WriteLine("blank cell");
+                            break;
+                        case 2: // BrtCellRk
+                            WriteCellSeparator(outputFile, data, datestyles, ref lastcol);
+                            uint value = BitConverter.ToUInt32(data, 8);
+                            double x;
+                            bool div100 = (data[8] & 1u) == 1u;
+                            bool fltype = (data[8] & 2u) == 0u;
+                            if (fltype)
+                            {
+                                byte[] dbl = new byte[8];
+                                dbl[0] = 0;
+                                dbl[1] = 0;
+                                dbl[2] = 0;
+                                dbl[3] = 0;
+                                dbl[4] = (byte)(data[8] & 0xFC);
+                                dbl[5] = data[9];
+                                dbl[6] = data[10];
+                                dbl[7] = data[11];
+                                x = BitConverter.ToDouble(dbl, 0);
+                            }
+                            else
+                            {
+                                x = Convert.ToDouble(value >> 2);
+                            }
+                            if (div100)
+                            {
+                                x /= 100;
+                            }
+                            if (Dateformatted(data, datestyles))
+                            {
+                                //outputFile.WriteLine("rk date {0}", Stringdate(x));
+                                outputFile.Write("{0}", Stringdate(x));
+                            }
+                            else
+                            {
+                                //outputFile.WriteLine("rk {0}", x);
+                                outputFile.Write("{0}", x);
+                            }
+                            break;
+                        case 3: // BrtCellError
+                        case 11: // BrtFmlaError
+                            WriteCellSeparator(outputFile, data, datestyles, ref lastcol);
+                            string err = "";
+                            switch (data[8])
+                            {
+                                case (byte)0x00u:
+                                    err = "#NULL!";
+                                    break;
+                                case (byte)0x07u:
+                                    err = "#DIV/0!";
+                                    break;
+                                case (byte)0x0Fu:
+                                    err = "#VALUE!";
+                                    break;
+                                case (byte)0x17u:
+                                    err = "#REF!";
+                                    break;
+                                case (byte)0x1Du:
+                                    err = "#NAME?";
+                                    break;
+                                case (byte)0x24u:
+                                    err = "#NUM!";
+                                    break;
+                                case (byte)0x2Au:
+                                    err = "#N/A";
+                                    break;
+                                case (byte)0x2Bu:
+                                    err = "#GETTING_DATA";
+                                    break;
+                                default:
+                                    break;
+                            }
+                            outputFile.Write(err);//data[8]);
+                            break;
+                        case 4: // BrtCellBool
+                        case 10: // BrtFmlaBool 
+                            WriteCellSeparator(outputFile, data, datestyles, ref lastcol);
+                            outputFile.Write("{0}", data[8]);
+                            break;
+                        case 5: // BrtCellReal
+                        case 9: // BrtFmlaNum 
+                            WriteCellSeparator(outputFile, data, datestyles, ref lastcol);
+                            if (Dateformatted(data, datestyles))
+                            {
+                                outputFile.Write("{0}", Stringdate(BitConverter.ToDouble(data, 8)));
+                            }
+                            else
+                            {
+                                outputFile.Write("{0}", BitConverter.ToDouble(data, 8));
+                            }
+                            break;
+                        case 6: // BrtCellSt 
+                        case 8: //BrtFmlaString
+                            WriteCellSeparator(outputFile, data, datestyles, ref lastcol);
+                            outputFile.Write("{0}", StringToCsv(Getxlwidestring(data, 8)));
+                            break;
+                        case 7: // BrtCellIsst
+                            WriteCellSeparator(outputFile, data, datestyles, ref lastcol);
+                            //if (!shstr.ContainsKey(BitConverter.ToUInt32(data, 8)))
+                            //outputFiledbg.WriteLine("shstr {0} missing", BitConverter.ToUInt32(data, 8));
+                            //else
+                            outputFile.Write("{0}", StringToCsv(shstr[BitConverter.ToUInt32(data, 8)]));
+                            break;
+                        //case 19: // Shared string
+                        //    outputFiledbg.WriteLine("shstr {0}", Getxlwidestring(data, 1));
+                        //    shstr.Add();
+                        //    break;
+                        //case 44: // fmt
+                        //    outputFile.WriteLine("fmt {0}", fsSource.Position);
+                        //    break;
+                        default:
+                            break;
+                    }
                 }
+                if (lastmsglen != 0)
+                    Console.Write(new String('\b', lastmsglen));
+                Console.WriteLine(rowno.ToString());
+                Console.WriteLine("finished");
             }
+            //}
         }
         public static bool Dateformatted(byte[] data, List<uint> datastyles)
         {
