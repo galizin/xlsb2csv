@@ -9,6 +9,9 @@ namespace xlsbtocsv
 {
     internal class Program
     {
+        private const string stylefname = @"xl/styles.bin";
+        private const string stringfname = @"xl/sharedStrings.bin";
+        private const string sheetfname = @"xl/worksheets/sheet1.bin";
         private static void Main()
         {
             try
@@ -20,18 +23,21 @@ namespace xlsbtocsv
                     {
                         Dictionary<uint, string> shstr = new Dictionary<uint, string>();
                         List<uint> datestyle = new List<uint>();
-                        using (Stream ms = archive.GetEntry(@"xl/styles.bin").Open())
-                        {
-                            Loadstyles(ms, ref datestyle);
-                        }
-                        using (Stream ms = archive.GetEntry(@"xl/sharedStrings.bin").Open())
-                        {
-                            Loadsharedstrings(ms, ref shstr);
-                        }
-                        using (Stream ms = archive.GetEntry(@"xl/worksheets/sheet1.bin").Open())
-                        {
-                            Readworksheet(ms, shstr, datestyle, filename);
-                        }
+                        if (archive.Entries.FirstOrDefault(a => a.FullName == stylefname) != null)
+                            using (Stream ms = archive.GetEntry(stylefname).Open())
+                            {
+                                Loadstyles(ms, ref datestyle);
+                            }
+                        if (archive.Entries.FirstOrDefault(a => a.FullName == stringfname) != null)
+                            using (Stream ms = archive.GetEntry(stringfname).Open())
+                            {
+                                Loadsharedstrings(ms, ref shstr);
+                            }
+                        if (archive.Entries.FirstOrDefault(a => a.FullName == sheetfname) != null)
+                            using (Stream ms = archive.GetEntry(sheetfname).Open())
+                            {
+                                Readworksheet(ms, shstr, datestyle, filename);
+                            }
                     }
                 }
             }
@@ -177,6 +183,7 @@ namespace xlsbtocsv
                             break;
                         case 2: // BrtCellRk
                             WriteCellSeparator(outputFile, data, datestyles, ref lastcol);
+                            //outputFile.Write("rk ");
                             uint value = BitConverter.ToUInt32(data, 8);
                             double x;
                             bool div100 = (data[8] & 1u) == 1u;
