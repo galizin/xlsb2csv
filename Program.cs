@@ -183,13 +183,14 @@ namespace xlsbtocsv
                             break;
                         case 2: // BrtCellRk
                             WriteCellSeparator(outputFile, data, datestyles, ref lastcol);
-                            //outputFile.Write("rk ");
-                            uint value = BitConverter.ToUInt32(data, 8);
+                            //outputFile.Write("rk " + BitConverter.ToString(data) + " "); //debug
+                            //int value = BitConverter.ToInt32(data, 8);
                             double x;
                             bool div100 = (data[8] & 1u) == 1u;
                             bool fltype = (data[8] & 2u) == 0u;
                             if (fltype)
                             {
+                                //outputFile.Write(" type 0 ");
                                 byte[] dbl = new byte[8];
                                 dbl[0] = 0;
                                 dbl[1] = 0;
@@ -203,10 +204,22 @@ namespace xlsbtocsv
                             }
                             else
                             {
-                                x = Convert.ToDouble(value >> 2);
+                                //int value2 = value >> 2;
+                                //int i = -4000137;
+                                //i = Convert.ToInt32(value2);
+                                x = BitConverter.ToInt32(data, 8) >> 2;//value >> 2;
+                                //outputFile.WriteLine(" type 1 {0} {1} {2} {3}", value, value >> 2, (int)(data[8] >> 2) + (data[9] << 6) + (data[10] << 14) + (data[11] << 22), x);
+                                //outputFile.WriteLine(Convert.ToString(value, 2) + " value " + value.ToString());
+                                //outputFile.WriteLine(Convert.ToString(value2, 2) + " value >> 2 " + value2.ToString());
+                                //outputFile.WriteLine(Convert.ToString(i, 2) + " i " + i.ToString());
+                                //outputFile.WriteLine(Convert.ToString(-1000035, 2) + " -1000035 ");
+                                //outputFile.WriteLine(Convert.ToString((int)(data[8] >> 2) + (data[9] << 6) + (data[10] << 14) + (data[11] << 22), 2) + " (int) data >> ");
+                                //outputFile.Write(Convert.ToString((data[8] >> 2) + (data[9] << 6) + (data[10] << 14) + (data[11] << 22), 2) + " data >> ");
+                                //outputFile.Write(Convert.ToString(x, 2) + " x ");
                             }
                             if (div100)
                             {
+                                //outputFile.Write(" div 100 ");
                                 x /= 100;
                             }
                             if (Dateformatted(data, datestyles))
