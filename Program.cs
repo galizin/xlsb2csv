@@ -140,7 +140,7 @@ namespace xlsbtocsv
             //using (StreamWriter outputFiledbg = new StreamWriter(Path.GetFileNameWithoutExtension(fname) + "shstr.txt", false, Encoding.UTF8))
             //{
 
-            using (StreamWriter outputFile = new StreamWriter(Path.GetFileNameWithoutExtension(fname) + ".txt", false, Encoding.UTF8))
+            using (StreamWriter outputFile = new StreamWriter(Path.GetFileNameWithoutExtension(fname) + ".txt", false, Encoding.Unicode))
             {
                 Console.WriteLine("converting {0}", fname);
                 Console.Write("reached row ");
@@ -429,7 +429,10 @@ namespace xlsbtocsv
                     innumeric -= 1;
                 }
                 // According to Lotus 1-2-3, Feb 29th 1900 is a real thing, therefore we have to remove one day after that date
-                return new DateTime(1899, 12, 31, 0, 0, 0).AddDays(Math.Truncate(innumeric)).AddSeconds(Math.Truncate((innumeric % 1) * 24 * 60 * 60)).ToString("o");
+                if (Math.Truncate(innumeric) == innumeric)
+                    return new DateTime(1899, 12, 31, 0, 0, 0).AddDays(Math.Truncate(innumeric)).AddSeconds(Math.Truncate((innumeric % 1) * 24 * 60 * 60)).ToString("o").Substring(0,10);
+                else
+                    return new DateTime(1899, 12, 31, 0, 0, 0).AddDays(Math.Truncate(innumeric)).AddSeconds(Math.Truncate((innumeric % 1) * 24 * 60 * 60)).ToString("o");
                 //  else
                 // Feb 29th 1900 will show up as Mar 1st 1900 because Python won't handle that date
                 //  return new DateTime(1899, 12, 31, 0, 0, 0) + timedelta(days=int(date), seconds=int((date % 1) * 24 * 60 * 60));
